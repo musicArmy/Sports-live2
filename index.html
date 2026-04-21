@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FOX 501 - Live Stream</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a1a3f 0%, #1a0a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            background: rgba(10, 26, 63, 0.95);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(255, 0, 0, 0.3), 0 0 40px rgba(0, 150, 255, 0.2);
+            border: 2px solid rgba(0, 150, 255, 0.3);
+        }
+
+        .header {
+            background: linear-gradient(90deg, #ff0000 0%, #0096ff 50%, #ff0000 100%);
+            padding: 25px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 36px;
+            font-weight: bold;
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        .player-wrapper {
+            background: #000;
+            padding: 25px;
+            position: relative;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 3px solid rgba(0, 150, 255, 0.4);
+        }
+
+        video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .controls-panel {
+            background: rgba(26, 10, 46, 0.9);
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 10px;
+            border: 2px solid rgba(0, 150, 255, 0.2);
+        }
+
+        .control-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .control-row:last-child {
+            margin-bottom: 0;
+        }
+
+        button, a.btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-play {
+            background: linear-gradient(135deg, #ff0000 0%, #ff6600 100%);
+            color: white;
+            box-shadow: 0 5px 15px rgba(255, 0, 0, 0.4);
+            min-width: 120px;
+            border: none;
+        }
+
+        .btn-play:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 0, 0, 0.6);
+        }
+
+        .btn-fullscreen {
+            background: linear-gradient(135deg, #0096ff 0%, #0066cc 100%);
+            color: white;
+            box-shadow: 0 5px 15px rgba(0, 150, 255, 0.4);
+            min-width: 120px;
+            border: none;
+        }
+
+        .btn-fullscreen:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 150, 255, 0.6);
+        }
+
+        .btn-hindi {
+            background: linear-gradient(135deg, #ff6600 0%, #ff0000 100%);
+            color: white;
+            box-shadow: 0 5px 15px rgba(255, 102, 0, 0.4);
+            width: 100%;
+            border: none;
+        }
+
+        .btn-hindi:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 102, 0, 0.6);
+        }
+
+        select {
+            padding: 12px 15px;
+            border: 2px solid #0096ff;
+            border-radius: 8px;
+            background: rgba(0, 150, 255, 0.1);
+            color: white;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #ff0000;
+            background: rgba(255, 0, 0, 0.1);
+        }
+
+        select option {
+            background: #1a0a2e;
+            color: white;
+        }
+
+        .status-box {
+            background: rgba(0, 150, 255, 0.1);
+            border-left: 4px solid #0096ff;
+            padding: 12px 15px;
+            border-radius: 5px;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 13px;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .status-box.playing {
+            background: rgba(0, 255, 0, 0.1);
+            border-left-color: #00ff00;
+            color: #00ff00;
+        }
+
+        .status-box.error {
+            background: rgba(255, 0, 0, 0.1);
+            border-left-color: #ff0000;
+            color: #ff0000;
+        }
+
+        .info-panel {
+            background: rgba(0, 150, 255, 0.08);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #0096ff;
+            margin-top: 15px;
+            color: rgba(255, 255, 255, 0.75);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .info-panel strong {
+            color: #0096ff;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .control-row {
+                flex-direction: column;
+            }
+
+            button, select, a.btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎬 ENGLISH CRIC LIVE</h1>
+            <p>High Definition Live Stream Player</p>
+        </div>
+
+        <!-- Video Player -->
+        <div class="player-wrapper">
+            <div class="video-container" id="videoContainer">
+                <video id="player" controls autoplay></video>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls-panel">
+            <div class="control-row">
+                <button class="btn-play" onclick="playStream()">▶ PLAY</button>
+                <button class="btn-fullscreen" onclick="toggleFullscreen()">⛶ FULLSCREEN</button>
+            </div>
+
+            <div class="control-row">
+                <select id="qualitySelect" onchange="changeQuality()">
+                    <option value="">📺 Select Quality</option>
+                </select>
+                <div class="status-box" id="statusBox">Ready</div>
+            </div>
+
+            <div class="control-row">
+                <a href="तुम्हारा_GITHUB_HINDI_PAGE_LINK_यहाँ" class="btn btn-hindi" target="_blank">🇮🇳 HINDI STREAMS</a>
+            </div>
+
+            <div class="info-panel">
+                <strong>📌 How to use:</strong><br>
+                • Click HINDI STREAMS button to go to Hindi streams page<br>
+                • Click PLAY button to play stream<br>
+                • Select quality from dropdown (if available)<br>
+                • Use FULLSCREEN button for full screen mode
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let hls;
+        const video = document.getElementById('player');
+        const videoContainer = document.getElementById('videoContainer');
+        const statusBox = document.getElementById('statusBox');
+        const qualitySelect = document.getElementById('qualitySelect');
+
+        // ⭐ STREAM LINK
+        const STREAM_URL = "https://lchd-314.zenostreams-cdn-001.com/fox501.m3u8";
+
+        function updateStatus(message, type = 'info') {
+            statusBox.textContent = message;
+            statusBox.className = 'status-box ' + type;
+        }
+
+        function playStream() {
+            const url = STREAM_URL;
+
+            if (!url) {
+                updateStatus('❌ Stream URL not configured', 'error');
+                return;
+            }
+
+            updateStatus('⏳ Loading stream...', 'info');
+
+            try {
+                // Destroy previous HLS instance
+                if (hls) {
+                    hls.destroy();
+                }
+
+                // Reset quality selector
+                qualitySelect.innerHTML = '<option value="">📺 Select Quality</option>';
+
+                // Check if HLS is supported
+                if (Hls.isSupported()) {
+                    hls = new Hls({
+                        debug: false,
+                        enableWorker: true,
+                        lowLatencyMode: true,
+                    });
+
+                    hls.loadSource(url);
+                    hls.attachMedia(video);
+
+                    hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                        updateStatus('✅ Stream Connected', 'playing');
+                        console.log('✅ Stream loaded successfully!');
+                        
+                        // Add quality options
+                        const levels = hls.levels;
+                        levels.forEach((level, index) => {
+                            const option = document.createElement('option');
+                            option.value = index;
+                            
+                            if (level.height) {
+                                option.textContent = `${level.height}p (${Math.round(level.bitrate / 1000)} kbps)`;
+                            } else {
+                                option.textContent = `Quality ${index + 1}`;
+                            }
+                            qualitySelect.appendChild(option);
+                        });
+
+                        video.play().catch(e => console.log('Autoplay:', e));
+                    });
+
+                    hls.on(Hls.Events.ERROR, function(event, data) {
+                        console.error('HLS Error:', data);
+                        if (data.fatal) {
+                            updateStatus('❌ Stream Error: ' + data.type, 'error');
+                        }
+                    });
+
+                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                    // Native HLS support (Safari)
+                    video.src = url;
+                    video.play().then(() => {
+                        updateStatus('✅ Stream Playing (Native)', 'playing');
+                    }).catch(e => {
+                        updateStatus('❌ Playback Error', 'error');
+                    });
+                }
+            } catch (error) {
+                updateStatus('❌ Error: ' + error.message, 'error');
+                console.error('Error:', error);
+            }
+        }
+
+        function changeQuality() {
+            const qualityIndex = qualitySelect.value;
+            
+            if (qualityIndex === '' || !hls) {
+                return;
+            }
+
+            hls.currentLevel = parseInt(qualityIndex);
+            const level = hls.levels[qualityIndex];
+            updateStatus(`✅ Quality changed to ${level.height || 'Auto'}p`, 'playing');
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                videoContainer.requestFullscreen().catch(err => {
+                    alert('Fullscreen not available');
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+    </script>
+</body>
+</html>
